@@ -8,5 +8,5 @@ Create the server in you ansible inventory file
 
 Run the ansible play 
 
-Browse to you webserver
+Browse to your webserver
 
