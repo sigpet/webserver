@@ -23,3 +23,8 @@
    - name: install haproxy
      yum: name=haproxy state=present
 
+#   - name: download wordpress source to server
+#     get_url: url=https://wordpress.org/latest.tar.gz dest=/tmp/wp-latest.tar.gz
+
+   - name: extract wordpress
+     unarchive: src=https://wordpress.org/latest.tar.gz dest=/var/www/html remote_src=yes
