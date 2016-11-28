@@ -1,0 +1,23 @@
+---
+
+- hosts: webserver
+  become: true
+  tasks: 
+   - name: install mysql repo
+     yum: name=https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm state=present
+   - name: install remi repo
+     yum: name=http://rpms.famillecollet.com/enterprise/remi-release-7.rpm state=present
+
+   - name: install httpd
+     yum: name=httpd state=latest
+   - systemd: enabled=yes state=started name=httpd
+
+   - name: install mysql56
+     yum: name=mysql-community-server enablerepo=mysql56-community disablerepo=mysql57-community state=present
+   - systemd: enabled=yes state=started name=mysql
+
+   - name: install php56
+     yum: name=php56 state=present
+   - systemd: state=restarted name=httpd
+
+
