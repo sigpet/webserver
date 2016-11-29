@@ -2,29 +2,52 @@
 
 - hosts: webserver
   become: true
+  gather_facts: False
   tasks: 
-   - name: install mysql repo
-     yum: name=https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm state=present
-   - name: install remi repo
-     yum: name=http://rpms.famillecollet.com/enterprise/remi-release-7.rpm state=present
+
+   - name: Set selinux permissive
+     selinux: policy=targeted state=permissive
+
+#   - name: install mysql repo
+#     yum: name=https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm state=present
+#   - name: install remi repo
+#     yum: name=http://rpms.famillecollet.com/enterprise/remi-release-7.rpm state=present
 
    - name: install httpd
      yum: name=httpd state=latest
-   - systemd: enabled=yes state=started name=httpd
 
-   - name: install mysql56
-     yum: name=mysql-community-server enablerepo=mysql56-community disablerepo=mysql57-community state=present
-   - systemd: enabled=yes state=started name=mysql
+   - name: Configure httpd
+     lineinfile: dest=/etc/httpd/conf/httpd.conf regexp="^Listen 80" line="Listen 5001"
+   - lineinfile: dest=/etc/httpd/conf/httpd.conf regexp="^#ServerName " insertafter="^#ServerName www.example.com:80 " line="ServerName webserver.local.host" backup=yes
 
-   - name: install php56
-     yum: name=php56 state=present
-   - systemd: state=restarted name=httpd
+   - name: Configure hosts file
+     lineinfile: dest=/etc/hosts line="192.168.7.129	webserver webserver.local.host"
+
+   - name: Enable and start httpd
+     systemd: enabled=yes state=started name=httpd
+
+   - name: Enable and configure firewalld
+     firewalld: service=http permanent=true state=enabled
+   - systemd: enabled=yes state=restarted name=firewalld
+
+#   - name: install mysql56
+#     yum: name=mysql-community-server enablerepo=mysql56-community disablerepo=mysql57-community state=present
+#   - systemd: enabled=yes state=started name=mysql
+
+#   - name: install php56
+#     yum: name=php56 state=present
+#   - systemd: state=restarted name=httpd
 
    - name: install haproxy
      yum: name=haproxy state=present
+   - copy: src=files/haproxy.cfg  dest=/etc/haproxy/haproxy.cfg  owner=root group=root mode=0644
+   - systemd: enabled=yes state=started name=haproxy
 
 #   - name: download wordpress source to server
 #     get_url: url=https://wordpress.org/latest.tar.gz dest=/tmp/wp-latest.tar.gz
 
-   - name: extract wordpress
-     unarchive: src=https://wordpress.org/latest.tar.gz dest=/var/www/html remote_src=yes
+#   - name: extract wordpress
+#     unarchive: src=https://wordpress.org/latest.tar.gz dest=/var/www/html remote_src=yes
+
+   - name: copy website to server
+     copy: src=html dest=/var/www/ owner=apache group=apache 
